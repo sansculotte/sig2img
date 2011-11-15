@@ -154,9 +154,9 @@ int main (int argc, char *argv[]) {
          return (ERROR);
 
       req = (int) sf_seek(audio_file, audio_frames * frame, SEEK_SET);
-printf("req: %i\n", req);
+//printf("req: %i\n", req);
       cnt = sf_readf_short(audio_file, audiobuffer, (sf_count_t) audio_frames);
-printf("cnt: %i\n", (int) cnt);
+//printf("cnt: %i\n", (int) cnt);
 
 //printf("pixel_buffer_size: %d, audio_buffer_size: %d, pixel_buffer_size-audio_buffer_size: %d\n", pixel_buffer_size, audio_buffer_size, pixel_buffer_size-audio_buffer_size);
       // scroll pixelbuffer
@@ -178,7 +178,6 @@ printf("cnt: %i\n", (int) cnt);
          }
          //printf("\n"); 
       } 
-//return(0);
       // generate png from pixelbuffer
       png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
 
