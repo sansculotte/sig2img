@@ -1,0 +1,7 @@
+sig2img
+
+Loads a soundfile and write the audiobuffer as a grayscale bitmap to a sequence
+of image files (video frames). 
+
+This can be usefull for an audio-based texture in a 3D application.
+
