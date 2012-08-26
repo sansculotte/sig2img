@@ -1,2 +1,2 @@
 #!/bin/bash
-gcc -lpng -lsndfile sig2img.c -osig2img
+gcc sig2img.c -lpng -lsndfile -osig2img
