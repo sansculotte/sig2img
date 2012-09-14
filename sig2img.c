@@ -117,8 +117,8 @@ int main (int argc, char *argv[]) {
       row_pointers[i] = &(pixelbuffer[i][0]);
    }
 
-   //printf("row_pointers: %lu \npixelbuffer: %lu pixelrow: %lu pixel: %lu\n", sizeof(row_pointers) / sizeof(row_pointers[0]), sizeof(pixelbuffer), sizeof(pixelbuffer[0]), sizeof(pixelbuffer[0][0]));
-   //printf("%s", row_pointers[119]);
+   printf("row_pointers: %lu \npixelbuffer: %lu pixelrow: %lu pixel: %lu\n", sizeof(row_pointers) / sizeof(row_pointers[0]), sizeof(pixelbuffer), sizeof(pixelbuffer[0]), sizeof(pixelbuffer[0][0]));
+   printf("%s", row_pointers[119]);
    //output_rows(width, height, row_pointers);
 
    v_frames = ceil(fps * (info.frames / (int) info.samplerate));
