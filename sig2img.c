@@ -2,12 +2,12 @@
  * 
  * sig2img
  * write an audiobuffer as a sequence of image files
- * can be usefull as an audio-based texture in an 3D
+ * can be usefull for an audio-based texture in a 3D
  * application.
  * 062011 u@sansculotte.net
  * 
  * todo:
- * - put code-juice into modular functions
+ * - modularize code, use functions
  * - what if audiobuffer > pixelbuffer? squeeze? truncate?
  * - distort an input image with soundbuffer
  * - float fps
@@ -28,6 +28,7 @@
 #define MINBUFSIZE 64
 #define MAXBUFSIZE 2^32
 #define BYTES_PER_PIXEL 1
+#define DEFAULT_FRAMERATE=25;
 
 #define ERROR 1
 
@@ -35,7 +36,8 @@
  */
 int main (int argc, char *argv[]) {
 
-   int width, height, fps, audio_frames, audio_buffer_size, pixel_buffer_size;
+   int width, height, audio_frames, audio_buffer_size, pixel_buffer_size;
+   int fps = 25;
    int frame;
    png_uint_32 i;
    char * audio_path, * output_dir="";
@@ -61,10 +63,12 @@ int main (int argc, char *argv[]) {
       }
       */
    }
+   if(argc>=4) {
+      fps = atoi(argv[4]);
+   }
 
    width = atoi(argv[2]);
    height = atoi(argv[3]);
-   fps = atoi(argv[4]);
 
    if(width<MINWIDTH || width>MAXWIDTH || height<MINHEIGHT || height>MAXHEIGHT) {
       printf("width must be beetween %d and %d, height between %d %d\n", MINWIDTH, MAXWIDTH, MINHEIGHT, MAXHEIGHT );
@@ -118,10 +122,10 @@ int main (int argc, char *argv[]) {
    }
 
    printf("row_pointers: %lu \npixelbuffer: %lu pixelrow: %lu pixel: %lu\n", sizeof(row_pointers) / sizeof(row_pointers[0]), sizeof(pixelbuffer), sizeof(pixelbuffer[0]), sizeof(pixelbuffer[0][0]));
-   printf("%s", row_pointers[119]);
    //output_rows(width, height, row_pointers);
 
-   v_frames = ceil(fps * (info.frames / (int) info.samplerate));
+   v_frames = ceil(fps * info.frames / (int) info.samplerate);
+   //printf("v_frames: %u, audioframes: %u, samplerate: %u\n", v_frames, info.frames, (int) info.samplerate);
 
    if(v_frames < 1) {
       puts("not enough samples for a video frame");
