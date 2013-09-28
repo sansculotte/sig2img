@@ -28,7 +28,6 @@
 #define MINBUFSIZE 64
 #define MAXBUFSIZE 2^32
 #define BYTES_PER_PIXEL 1
-#define DEFAULT_FRAMERATE=25;
 
 #define ERROR 1
 
@@ -121,7 +120,7 @@ int main (int argc, char *argv[]) {
       row_pointers[i] = &(pixelbuffer[i][0]);
    }
 
-   printf("row_pointers: %lu \npixelbuffer: %lu pixelrow: %lu pixel: %lu\n", sizeof(row_pointers) / sizeof(row_pointers[0]), sizeof(pixelbuffer), sizeof(pixelbuffer[0]), sizeof(pixelbuffer[0][0]));
+   //printf("row_pointers: %lu \npixelbuffer: %lu pixelrow: %lu pixel: %lu\n", sizeof(row_pointers) / sizeof(row_pointers[0]), sizeof(pixelbuffer), sizeof(pixelbuffer[0]), sizeof(pixelbuffer[0][0]));
    //output_rows(width, height, row_pointers);
 
    v_frames = ceil(fps * info.frames / (int) info.samplerate);
