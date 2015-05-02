@@ -5,3 +5,8 @@ of image files (video frames).
 
 This can be usefull for an audio-based texture in a 3D application.
 
+/sig2img ~/snd/bombhead/divcore/cacerolaco4.wav 84 42 25 ~/visuals/anon01/
+
+todo
+
+should negtive values be black?
