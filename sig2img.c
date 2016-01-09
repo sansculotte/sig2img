@@ -1,4 +1,4 @@
-/********************************************************************************
+/*******************************************************************************
  *
  * sig2img
  * write an audiobuffer as a sequence of image files
@@ -14,6 +14,7 @@
  * - test compile and run on different systems
  */
 
+#include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <sndfile.h>
@@ -33,10 +34,10 @@
 #define ERROR 1
 
 typedef struct  {
-    unsigned int width;
-    unsigned int height;
-    unsigned int audio_frames;
-    unsigned short channels;
+    uint16_t width;
+    uint16_t height;
+    uint32_t audio_frames;
+    uint16_t channels;
 } s_dimension;
 
 void frame_loop(unsigned int frame, char* output_dir, SNDFILE* audio_file, s_dimension d);
@@ -48,13 +49,12 @@ void frame_loop(unsigned int frame, char* output_dir, SNDFILE* audio_file, s_dim
  */
 int main (int argc, char *argv[]) {
 
-    int width, height, audio_frames, audio_buffer_size, pixel_buffer_size;
-    int fps = 25;
-    unsigned int frame;
+    int width, height, audio_frames, audio_buffer_size, pixel_buffer_size, fps = 25;
+    uint32_t frame;
     char * audio_path;
     char * output_dir = "";
 
-    int video_frames;
+    uint32_t video_frames;
 
     SNDFILE *audio_file;
     SF_INFO info;
