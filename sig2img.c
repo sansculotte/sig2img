@@ -155,7 +155,7 @@ void frame_loop(size_t frame, char* output_dir, SNDFILE* audio_file, s_dimension
     png_infop info_ptr;
     png_structp png_ptr;
     png_color_8 sig_bit;
-    png_byte  pixelbuffer[d.height][d.width*BYTES_PER_PIXEL]; //int?
+    png_byte  pixelbuffer[d.height][d.width*BYTES_PER_PIXEL];
     png_bytep row_pointers[d.height];
     short int audiobuffer[d.channels * d.audio_frames];
 
@@ -169,7 +169,7 @@ void frame_loop(size_t frame, char* output_dir, SNDFILE* audio_file, s_dimension
         row_pointers[i] = &(pixelbuffer[i][0]);
     }
 
-    if(strlen(output_dir)==0) {
+    if(strlen(output_dir) == 0) {
         sprintf(file_name, "f%06lu.png",  frame+1);
     } else {
         sprintf(file_name, "%s/f%06lu.png", output_dir, frame+1);
@@ -178,24 +178,25 @@ void frame_loop(size_t frame, char* output_dir, SNDFILE* audio_file, s_dimension
 
     // open file for writing
     FILE *fp = fopen(file_name, "wb");
-    if (!fp)
+    if (!fp) {
         exit(ERROR);
+    }
 
     sf_count_t req = (size_t) sf_seek(audio_file, d.audio_frames * frame, SEEK_SET);
     if(req == -1) {
         puts("[!] audiofile seek error");
         return;
     }
-    //printf("req: %i\n", req);
     cnt = sf_readf_short(audio_file, audiobuffer, (sf_count_t) d.audio_frames);
-    //printf("cnt: %i\n", (int) cnt);
 
+    //printf("cnt: %i\n", (int) cnt);
     //printf("pixel_buffer_size: %d, audio_buffer_size: %d, pixel_buffer_size-audio_buffer_size: %d\n", pixel_buffer_size, audio_buffer_size, pixel_buffer_size-audio_buffer_size);
+
     // scroll pixelbuffer
     //memmove(pixelbuffer+audio_buffer_size, pixelbuffer, pixel_buffer_size-audio_buffer_size );
-    for(x=(int)d.height-ceil((d.audio_frames*d.channels)/d.width); x>0; x--) {
+    x = (size_t) d.height-ceil((d.audio_frames*d.channels)/d.width);
+    for(; x>0; x--) {
         memcpy(row_pointers[x+(int)floor((d.audio_frames*d.channels)/d.width)-1], row_pointers[x-1], d.width);
-        //row_pointers[x+(int)ceil(audio_buffer_size*sizeof(short int)/width)] = row_pointers[x];
     }
 
     // insert new block
