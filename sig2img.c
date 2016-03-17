@@ -40,7 +40,7 @@ typedef struct  {
     uint16_t channels;
 } s_dimension;
 
-void frame_loop(unsigned int frame, char* output_dir, SNDFILE* audio_file, s_dimension d);
+void frame_loop(size_t frame, char* output_dir, SNDFILE* audio_file, s_dimension d);
 
 
 
@@ -145,12 +145,12 @@ int main (int argc, char *argv[]) {
 /*
  * write audio block to png file
 */
-void frame_loop(unsigned int frame, char* output_dir, SNDFILE* audio_file, s_dimension d) {
+void frame_loop(size_t frame, char* output_dir, SNDFILE* audio_file, s_dimension d) {
 
     sf_count_t cnt;
-    int bit_depth = 8;
+    size_t bit_depth = 8;
 
-    int x, y, wsec = ceil(d.width/d.channels);
+    size_t x, y, wsec = ceil(d.width/d.channels);
     png_uint_32 i;
     png_infop info_ptr;
     png_structp png_ptr;
@@ -170,9 +170,9 @@ void frame_loop(unsigned int frame, char* output_dir, SNDFILE* audio_file, s_dim
     }
 
     if(strlen(output_dir)==0) {
-        sprintf(file_name, "f%06i.png",  frame+1);
+        sprintf(file_name, "f%06lu.png",  frame+1);
     } else {
-        sprintf(file_name, "%s/f%06i.png", output_dir, frame+1);
+        sprintf(file_name, "%s/f%06lu.png", output_dir, frame+1);
     }
     printf("%s\n", file_name);
 
@@ -181,7 +181,7 @@ void frame_loop(unsigned int frame, char* output_dir, SNDFILE* audio_file, s_dim
     if (!fp)
         exit(ERROR);
 
-    sf_count_t req = (int) sf_seek(audio_file, d.audio_frames * frame, SEEK_SET);
+    sf_count_t req = (size_t) sf_seek(audio_file, d.audio_frames * frame, SEEK_SET);
     if(req == -1) {
         puts("[!] audiofile seek error");
         return;
