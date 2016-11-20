@@ -161,11 +161,19 @@ void frame_loop(size_t frame, char* output_dir, SNDFILE* audio_file, s_dimension
     png_infop info_ptr;
     png_structp png_ptr;
     png_color_8 sig_bit;
-    png_byte  pixelbuffer[d.height][d.width*BYTES_PER_PIXEL];
+    png_byte  pixelbuffer[d.height][d.width * BYTES_PER_PIXEL];
     png_bytep row_pointers[d.height];
     short int audiobuffer[d.channels * d.audio_frames];
 
     char file_name[11 + strlen(output_dir)];
+
+    // open file for writing
+    set_filename(file_name, output_dir, frame);
+    FILE *fp = fopen(file_name, "wb");
+    if (!fp) {
+        exit(ERROR);
+    }
+    printf("%s\n", file_name);
 
     // clear pixelbuffer
     memset(&pixelbuffer, 0, d.width * d.height * BYTES_PER_PIXEL);
@@ -173,15 +181,6 @@ void frame_loop(size_t frame, char* output_dir, SNDFILE* audio_file, s_dimension
     for (i = 0; i < d.height; i++) {
         //row_pointers[i] = pixelbuffer + i*width*BYTES_PER_PIXEL;
         row_pointers[i] = &(pixelbuffer[i][0]);
-    }
-
-    set_filename(file_name, output_dir, frame);
-    printf("%s\n", file_name);
-
-    // open file for writing
-    FILE *fp = fopen(file_name, "wb");
-    if (!fp) {
-        exit(ERROR);
     }
 
     sf_count_t req = (size_t)sf_seek(audio_file, d.audio_frames * frame, SEEK_SET);
