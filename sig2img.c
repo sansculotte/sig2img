@@ -116,10 +116,15 @@ int main (int argc, char *argv[]) {
    // allocate buffer
    audio_frames = floor(info.samplerate / fps);
    audio_buffer_size = info.channels * audio_frames;
-   pixel_buffer_size = width*height*BYTES_PER_PIXEL;
+   pixel_buffer_size = width * height * BYTES_PER_PIXEL;
 
-   if (audio_buffer_size>pixel_buffer_size) {
-      puts("audiobuffer greater than pixel buffer. can't handle this atm.");
+   if (audio_buffer_size > pixel_buffer_size) {
+      printf(
+         "audiobuffer (%d) greater than pixel buffer (%d). can't handle this atm.\n",
+         audio_buffer_size,
+         pixel_buffer_size
+      );
+      printf("samplerate: %d, channels: %d\n", info.samplerate, info.channels);
       return (ERROR);
    }
 
