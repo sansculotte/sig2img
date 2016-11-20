@@ -44,7 +44,7 @@ typedef struct  {
 } s_dimension;
 
 void frame_loop(size_t frame, char* output_dir, SNDFILE* audio_file, s_dimension d);
-
+void set_filename(char* file_name, char* dir, size_t index);
 
 
 /**
@@ -165,21 +165,17 @@ void frame_loop(size_t frame, char* output_dir, SNDFILE* audio_file, s_dimension
     png_bytep row_pointers[d.height];
     short int audiobuffer[d.channels * d.audio_frames];
 
-    char file_name[11+strlen(output_dir)];
+    char file_name[11 + strlen(output_dir)];
 
     // clear pixelbuffer
-    memset(&pixelbuffer, 0, d.width*d.height*BYTES_PER_PIXEL);
+    memset(&pixelbuffer, 0, d.width * d.height * BYTES_PER_PIXEL);
     // assign row pointers
     for (i = 0; i < d.height; i++) {
         //row_pointers[i] = pixelbuffer + i*width*BYTES_PER_PIXEL;
         row_pointers[i] = &(pixelbuffer[i][0]);
     }
 
-    if(strlen(output_dir) == 0) {
-        sprintf(file_name, "f%06lu.png",  frame+1);
-    } else {
-        sprintf(file_name, "%s/f%06lu.png", output_dir, frame+1);
-    }
+    set_filename(file_name, output_dir, frame);
     printf("%s\n", file_name);
 
     // open file for writing
@@ -191,6 +187,7 @@ void frame_loop(size_t frame, char* output_dir, SNDFILE* audio_file, s_dimension
     sf_count_t req = (size_t)sf_seek(audio_file, d.audio_frames * frame, SEEK_SET);
     if(req == -1) {
         puts("[!] audiofile seek error");
+        // skip frame
         return;
     }
     cnt = sf_readf_short(audio_file, audiobuffer, (sf_count_t) d.audio_frames);
@@ -218,6 +215,7 @@ void frame_loop(size_t frame, char* output_dir, SNDFILE* audio_file, s_dimension
         }
         //printf("\n");
     }
+
     // generate png from pixelbuffer
     png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
 
@@ -261,4 +259,17 @@ void frame_loop(size_t frame, char* output_dir, SNDFILE* audio_file, s_dimension
 
     png_destroy_write_struct(&png_ptr, &info_ptr);
     fclose(fp);
+}
+
+void set_filename(char* file_name, char* dir, size_t index) {
+
+    size_t num = index + 1;
+
+    if(strlen(dir) == 0) {
+        sprintf(file_name, "f%06lu.png", num);
+    } else if (strcmp(dir, "/") == 0) {
+        sprintf(file_name, "/f%06lu.png", num);
+    } else {
+        sprintf(file_name, "%s/f%06lu.png", dir, num);
+    }
 }
