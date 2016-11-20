@@ -1,3 +1,4 @@
+// vim: softtabstop=4 :shiftwidth=4 :expandtab
 /*******************************************************************************
  *
  * sig2img
@@ -7,8 +8,9 @@
  * 062011 u@sansculotte.net
  *
  * todo:
- * - modularize code, use functions
- * - what if audiobuffer > pixelbuffer? squeeze? truncate?
+ * - pixellbuffer > audiobuffer: shift
+ * - audiobuffer > pixelbuffer: squeeze? truncate?
+ * - option to seperate channels
  * - distort an input image with soundbuffer
  * - float fps
  * - test compile and run on different systems
@@ -34,10 +36,11 @@
 #define ERROR 1
 
 typedef struct  {
-    uint16_t width;
-    uint16_t height;
-    uint32_t audio_frames;
-    uint16_t channels;
+   uint16_t width;
+   uint16_t height;
+   uint32_t audio_frames;
+   uint16_t channels;
+   uint16_t bit_depth;
 } s_dimension;
 
 void frame_loop(size_t frame, char* output_dir, SNDFILE* audio_file, s_dimension d);
@@ -49,15 +52,15 @@ void frame_loop(size_t frame, char* output_dir, SNDFILE* audio_file, s_dimension
  */
 int main (int argc, char *argv[]) {
 
-    int width, height, audio_frames, audio_buffer_size, pixel_buffer_size, fps = 25;
-    uint32_t frame;
-    char * audio_path;
-    char * output_dir = "";
+   uint16_t width, height, fps = 25, bit_depth = 8;
+   uint32_t audio_buffer_size, pixel_buffer_size;
+   char * audio_path;
+   char * output_dir = "";
 
-    uint32_t video_frames;
+   size_t audio_frames, video_frames;
 
-    SNDFILE *audio_file;
-    SF_INFO info;
+   SNDFILE *audio_file;
+   SF_INFO info;
 
    if(argc<5) {
       printf("Usage: %s <audio file> <width> <height> <fps> [<ouput dir>]\n", argv[0]);
@@ -127,9 +130,9 @@ int main (int argc, char *argv[]) {
       return(ERROR);
    }
 
-   s_dimension dimension = {width, height, audio_frames, (short) info.channels};
+   s_dimension dimension = {width, height, audio_frames, (short)info.channels, bit_depth};
 
-   for(frame=0; frame<video_frames; frame++) {
+   for(size_t frame=0; frame<video_frames; frame++) {
       frame_loop(frame, output_dir, audio_file, dimension);
    }
 
@@ -144,9 +147,9 @@ int main (int argc, char *argv[]) {
 void frame_loop(size_t frame, char* output_dir, SNDFILE* audio_file, s_dimension d) {
 
     sf_count_t cnt;
-    size_t bit_depth = 8;
-
-    size_t x, y, wsec = ceil(d.width/d.channels);
+    size_t x, y;
+    size_t n_rows = floor((d.audio_frames * d.channels) / d.width);
+    size_t wsec = ceil(d.width / d.channels);
     png_uint_32 i;
     png_infop info_ptr;
     png_structp png_ptr;
@@ -178,7 +181,7 @@ void frame_loop(size_t frame, char* output_dir, SNDFILE* audio_file, s_dimension
         exit(ERROR);
     }
 
-    sf_count_t req = (size_t) sf_seek(audio_file, d.audio_frames * frame, SEEK_SET);
+    sf_count_t req = (size_t)sf_seek(audio_file, d.audio_frames * frame, SEEK_SET);
     if(req == -1) {
         puts("[!] audiofile seek error");
         return;
@@ -190,9 +193,9 @@ void frame_loop(size_t frame, char* output_dir, SNDFILE* audio_file, s_dimension
 
     // scroll pixelbuffer
     //memmove(pixelbuffer+audio_buffer_size, pixelbuffer, pixel_buffer_size-audio_buffer_size );
-    x = (size_t) d.height-ceil((d.audio_frames*d.channels)/d.width);
+    x = (size_t) d.height - ceil((d.audio_frames * d.channels) / d.width);
     for(; x>0; x--) {
-        memcpy(row_pointers[x+(int)floor((d.audio_frames*d.channels)/d.width)-1], row_pointers[x-1], d.width);
+        memcpy(row_pointers[x + n_rows - 1], row_pointers[x - 1], d.width);
     }
 
     // insert new block
@@ -200,7 +203,9 @@ void frame_loop(size_t frame, char* output_dir, SNDFILE* audio_file, s_dimension
     for(x=0; x<cnt; x++) {
         //pixelbuffer[ (int) floor(x / width) ][x % width] = (char) audiobuffer[x * channels];
         for(y=0; y<d.channels; y++) {
-            pixelbuffer[ (int) floor(x / wsec) ][x % wsec + y * wsec] = abs((audiobuffer[x * d.channels + y]) / 128);
+            size_t ix = floor(x / wsec);
+            size_t iy = x % wsec + y * wsec;
+            pixelbuffer[ix][iy] = abs((audiobuffer[x * d.channels + y]) / 128);
             //printf("%lu ", (audiobuffer[x * channels + y] + sizeof(short int)) / 2);
             //printf("%i ", abs((audiobuffer[x * channels + y]) / 128));
         }
@@ -231,8 +236,16 @@ void frame_loop(size_t frame, char* output_dir, SNDFILE* audio_file, s_dimension
 
     // write png
     png_init_io(png_ptr, fp);
-    png_set_IHDR(png_ptr, info_ptr, d.width, d.height, bit_depth, PNG_COLOR_TYPE_GRAY, PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
-    sig_bit.gray = bit_depth;
+    png_set_IHDR(png_ptr,
+                 info_ptr,
+                 d.width,
+                 d.height,
+                 d.bit_depth,
+                 PNG_COLOR_TYPE_GRAY,
+                 PNG_INTERLACE_NONE,
+                 PNG_COMPRESSION_TYPE_DEFAULT,
+                 PNG_FILTER_TYPE_DEFAULT);
+    sig_bit.gray = d.bit_depth;
     png_set_sBIT(png_ptr, info_ptr, &sig_bit);
 
     png_write_info(png_ptr, info_ptr);
