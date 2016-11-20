@@ -25,8 +25,8 @@
 #define MAXFPS 1024
 #define MAXWIDTH 8196
 #define MAXHEIGHT 8196
-#define MINWIDTH 40
-#define MINHEIGHT 40
+#define MINWIDTH 1
+#define MINHEIGHT 1
 #define MINBUFSIZE 64
 #define MAXBUFSIZE 2^32
 #define BYTES_PER_PIXEL 1
@@ -84,10 +84,6 @@ int main (int argc, char *argv[]) {
 
    if(width<MINWIDTH || width>MAXWIDTH || height<MINHEIGHT || height>MAXHEIGHT) {
       printf("width must be beetween %d and %d, height between %d %d\n", MINWIDTH, MAXWIDTH, MINHEIGHT, MAXHEIGHT );
-      return (ERROR);
-   }
-   if (height > PNG_UINT_32_MAX/png_sizeof(png_bytep)) {
-      puts ("Image is too tall to process in memory");
       return (ERROR);
    }
 
