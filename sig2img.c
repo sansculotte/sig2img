@@ -71,6 +71,10 @@ int main (int argc, char *argv[]) {
 
    if(argc>=6) {
       output_dir = argv[5];
+      size_t len = strlen(output_dir);
+      while(len > 1 && output_dir[len - 1] == '/' && len--) {
+         output_dir[len] = '\0';
+      }
       /*
       if(stat(output_dir, ) == -1) {
          printf("output_dir '%s' is not accessible\n", output_dir);
