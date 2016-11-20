@@ -1,12 +1,21 @@
 sig2img
 
 Loads a soundfile and write the audiobuffer as a grayscale bitmap to a sequence
-of image files (video frames). 
+of image files (video frames).
 
-This can be usefull for an audio-based texture in a 3D application.
+This can be usefull for an audio-based displacement texture in a 3D application.
 
-/sig2img ~/snd/bombhead/divcore/cacerolaco4.wav 84 42 25 ~/visuals/anon01/
+The ratio between audio samplerate and video frame rate determines the resolution
+of the resulting image. for 44100 audio at 25 fps that's a total of 1764 per channel.
 
-todo
 
-should negtive values be black?
+EXAMPLES
+
+./sig2img ~/snd/bombhead/divcore/cacerolaco4.wav 84 42 25 ~/visuals/anon01/
+
+
+for linewise displace effect, make one vertical stripe and scale to your desired format, ie:
+
+./sig2img ~/snd/test.wav 1 1764 25 /tmp/sig
+mogrify -resize 1920x1080\! /tmp/sig/*.png
+
