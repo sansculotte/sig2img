@@ -45,6 +45,7 @@ typedef struct  {
 
 void frame_loop(size_t frame, char* output_dir, SNDFILE* audio_file, s_dimension d);
 void set_filename(char* file_name, char* dir, size_t index);
+int min(int val1, int val2);
 
 
 /**
@@ -153,17 +154,18 @@ int main (int argc, char *argv[]) {
 */
 void frame_loop(size_t frame, char* output_dir, SNDFILE* audio_file, s_dimension d) {
 
-    sf_count_t cnt;
     size_t x, y;
-    size_t n_rows = floor((d.audio_frames * d.channels) / d.width);
+    size_t area = d.width * d.height;
     size_t wsec = ceil(d.width / d.channels);
+    sf_count_t req, cnt;
+    sf_count_t copy_frames = ceil(area / d.channels);
     png_uint_32 i;
     png_infop info_ptr;
     png_structp png_ptr;
     png_color_8 sig_bit;
     png_byte  pixelbuffer[d.height][d.width * BYTES_PER_PIXEL];
     png_bytep row_pointers[d.height];
-    short int audiobuffer[d.channels * d.audio_frames];
+    short int audiobuffer[d.channels * area];
 
     char file_name[11 + strlen(output_dir)];
 
@@ -176,37 +178,25 @@ void frame_loop(size_t frame, char* output_dir, SNDFILE* audio_file, s_dimension
     printf("%s\n", file_name);
 
     // clear pixelbuffer
-    memset(&pixelbuffer, 0, d.width * d.height * BYTES_PER_PIXEL);
+    memset(&pixelbuffer, 0, area * BYTES_PER_PIXEL);
     // assign row pointers
     for (i = 0; i < d.height; i++) {
-        //row_pointers[i] = pixelbuffer + i*width*BYTES_PER_PIXEL;
         row_pointers[i] = &(pixelbuffer[i][0]);
     }
 
-    sf_count_t req = (size_t)sf_seek(audio_file, d.audio_frames * frame, SEEK_SET);
+    req = (size_t)sf_seek(audio_file, d.audio_frames * frame, SEEK_SET);
     if(req == -1) {
         puts("[!] audiofile seek error");
         // skip frame
         return;
     }
-    cnt = sf_readf_short(audio_file, audiobuffer, (sf_count_t) d.audio_frames);
+    cnt = sf_readf_short(audio_file, audiobuffer, copy_frames);
 
-    //printf("cnt: %i\n", (int) cnt);
-    //printf("pixel_buffer_size: %d, audio_buffer_size: %d, pixel_buffer_size-audio_buffer_size: %d\n", pixel_buffer_size, audio_buffer_size, pixel_buffer_size-audio_buffer_size);
-
-    // scroll pixelbuffer
-    //memmove(pixelbuffer+audio_buffer_size, pixelbuffer, pixel_buffer_size-audio_buffer_size );
-    x = (size_t) d.height - ceil((d.audio_frames * d.channels) / d.width);
-    for(; x>0; x--) {
-        memcpy(row_pointers[x + n_rows - 1], row_pointers[x - 1], d.width);
-    }
-
-    // insert new block
-    //memcpy(pixelbuffer, audiobuffer, audio_buffer_size*sizeof(short int));
+    // copy block
     for(x=0; x<cnt; x++) {
         //pixelbuffer[ (int) floor(x / width) ][x % width] = (char) audiobuffer[x * channels];
         for(y=0; y<d.channels; y++) {
-            size_t ix = floor(x / wsec);
+            size_t ix = min(floor(x / wsec), d.height-1);
             size_t iy = x % wsec + y * wsec;
             pixelbuffer[ix][iy] = abs((audiobuffer[x * d.channels + y]) / 128);
             //printf("%lu ", (audiobuffer[x * channels + y] + sizeof(short int)) / 2);
@@ -214,6 +204,7 @@ void frame_loop(size_t frame, char* output_dir, SNDFILE* audio_file, s_dimension
         }
         //printf("\n");
     }
+
 
     // generate png from pixelbuffer
     png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
@@ -258,6 +249,10 @@ void frame_loop(size_t frame, char* output_dir, SNDFILE* audio_file, s_dimension
 
     png_destroy_write_struct(&png_ptr, &info_ptr);
     fclose(fp);
+}
+
+int min(int val1, int val2) {
+   return val2 > val1 ? val1 : val2;
 }
 
 void set_filename(char* file_name, char* dir, size_t index) {
