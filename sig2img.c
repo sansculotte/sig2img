@@ -55,22 +55,22 @@ int main (int argc, char *argv[]) {
 
    uint16_t width, height, fps = 25, bit_depth = 8;
    uint32_t audio_buffer_size, pixel_buffer_size;
-   char * audio_path;
-   char * output_dir = "";
+   char *audio_path;
+   char *output_dir = "";
 
    size_t audio_frames, video_frames;
 
    SNDFILE *audio_file;
    SF_INFO info;
 
-   if(argc<5) {
+   if (argc<5) {
       printf("Usage: %s <audio file> <width> <height> <fps> [<ouput dir>]\n", argv[0]);
-      return (ERROR);
+      return(ERROR);
    }
 
    audio_path = argv[1];
 
-   if(argc>=6) {
+   if (argc>=6) {
       output_dir = argv[5];
       size_t len = strlen(output_dir);
       while(output_dir[len - 1] == '/' && --len) {
@@ -78,38 +78,38 @@ int main (int argc, char *argv[]) {
       }
       if(access(output_dir, W_OK) != 0) {
          printf("output_dir '%s' is not accessible\n", output_dir);
-         return (ERROR);
+         return(ERROR);
       }
    }
-   if(argc>=4) {
+   if (argc>=4) {
       fps = atoi(argv[4]);
    }
 
    width  = atoi(argv[2]);
    height = atoi(argv[3]);
 
-   if(width<MINWIDTH || width>MAXWIDTH || height<MINHEIGHT || height>MAXHEIGHT) {
-      printf("width must be beetween %d and %d, height between %d %d\n", MINWIDTH, MAXWIDTH, MINHEIGHT, MAXHEIGHT );
-      return (ERROR);
+   if (width<MINWIDTH || width>MAXWIDTH || height<MINHEIGHT || height>MAXHEIGHT) {
+      printf("width must be beetween %d and %d, height between %d %d\n", MINWIDTH, MAXWIDTH, MINHEIGHT, MAXHEIGHT);
+      return(ERROR);
    }
 
-   if(fps<MINFPS || fps>MAXFPS) {
+   if (fps<MINFPS || fps>MAXFPS) {
       printf("frames per second must be between %d and %d\n", MINFPS, MAXFPS );
-      return (ERROR);
+      return(ERROR);
    }
 
-   memset (&info, 0, sizeof (info)) ;
+   memset(&info, 0, sizeof(info));
 
    // open soundfile
    audio_file = sf_open(audio_path, SFM_READ, &info);
    if (audio_file == NULL) {
-       printf ("failed to open file '%s' : \n%s\n", audio_path, sf_strerror (NULL));
-       return (ERROR) ;
+       printf("failed to open file '%s' : \n%s\n", audio_path, sf_strerror (NULL));
+       return(ERROR);
    }
 
-   if(info.channels<1) {
+   if (info.channels<1) {
       puts("no audio channels.");
-      return (ERROR);
+      return(ERROR);
    }
 
    // allocate buffer
@@ -124,27 +124,35 @@ int main (int argc, char *argv[]) {
          pixel_buffer_size
       );
       printf("samplerate: %d, channels: %d\n", info.samplerate, info.channels);
-      return (ERROR);
+      return(ERROR);
    }
 
    //printf("row_pointers: %lu \npixelbuffer: %lu pixelrow: %lu pixel: %lu\n", sizeof(row_pointers) / sizeof(row_pointers[0]), sizeof(pixelbuffer), sizeof(pixelbuffer[0]), sizeof(pixelbuffer[0][0]));
    //output_rows(width, height, row_pointers);
+   
+   //printf("frames: %lu\n", info.frames);
 
    video_frames = ceil(fps * info.frames / (int) info.samplerate);
    //printf("video_frames: %u, audioframes: %u, samplerate: %u\n", v_frames, info.frames, (int) info.samplerate);
 
-   if(video_frames < 1) {
+   if (video_frames < 1) {
       puts("not enough samples for a video frame");
       return(ERROR);
    }
 
-   s_dimension dimension = {width, height, audio_frames, (short)info.channels, bit_depth};
+   s_dimension dimension = {
+       width,
+       height,
+       audio_frames,
+       (short)info.channels,
+       bit_depth
+   };
 
-   for(size_t frame=0; frame<video_frames; frame++) {
+   for (size_t frame=0; frame<video_frames; frame++) {
       frame_loop(frame, output_dir, audio_file, dimension);
    }
 
-   sf_close (audio_file);
+   sf_close(audio_file);
    return(0);
 
 }
@@ -185,7 +193,7 @@ void frame_loop(size_t frame, char* output_dir, SNDFILE* audio_file, s_dimension
     }
 
     req = (size_t)sf_seek(audio_file, d.audio_frames * frame, SEEK_SET);
-    if(req == -1) {
+    if (req == -1) {
         puts("[!] audiofile seek error");
         // skip frame
         return;
@@ -193,7 +201,7 @@ void frame_loop(size_t frame, char* output_dir, SNDFILE* audio_file, s_dimension
     cnt = sf_readf_short(audio_file, audiobuffer, copy_frames);
 
     // copy block
-    for(x=0; x<cnt; x++) {
+    for (x=0; x<cnt; x++) {
         //pixelbuffer[ (int) floor(x / width) ][x % width] = (char) audiobuffer[x * channels];
         for(y=0; y<d.channels; y++) {
             size_t ix = min(floor(x / wsec), d.height-1);
