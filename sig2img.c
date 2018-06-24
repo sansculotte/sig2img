@@ -22,6 +22,7 @@
 #include <sndfile.h>
 #include <png.h>
 #include <math.h>
+#include <unistd.h>
 
 #define MINFPS 1
 #define MAXFPS 1024
