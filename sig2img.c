@@ -23,6 +23,7 @@
 #include <png.h>
 #include <math.h>
 #include <unistd.h>
+#include <string.h>
 
 #define MINFPS 1
 #define MAXFPS 1024
