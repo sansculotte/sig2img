@@ -8,7 +8,7 @@
  * 062011 u@sansculotte.net
  *
  * todo:
- * - pixellbuffer > audiobuffer: shift
+ * - pixelbuffer > audiobuffer: shift
  * - audiobuffer > pixelbuffer: squeeze? truncate?
  * - option to seperate channels
  * - distort an input image with soundbuffer
@@ -35,7 +35,6 @@
 #define MAXBUFSIZE 2^32
 #define BYTES_PER_PIXEL 1
 
-#define ERROR 1
 
 typedef struct  {
    uint16_t width;
@@ -67,22 +66,24 @@ int main (int argc, char *argv[]) {
 
    if (argc<5) {
       printf("Usage: %s <audio file> <width> <height> <fps> [<ouput dir>]\n", argv[0]);
-      return(ERROR);
+      return(EXIT_FAILURE);
    }
 
    audio_path = argv[1];
 
    if (argc>=6) {
-      output_dir = argv[5];
-      size_t len = strlen(output_dir);
-      while(output_dir[len - 1] == '/' && --len) {
-         output_dir[len] = '\0';
+      if (strlen(argv[5]) > 255) {
+          puts("output_dir too long\n");
+          return(EXIT_FAILURE);
       }
+      strcpy(output_dir, argv[5]);
       if(access(output_dir, W_OK) != 0) {
          printf("output_dir '%s' is not accessible\n", output_dir);
-         return(ERROR);
+         return(EXIT_FAILURE);
       }
+      printf("strlen(output_dir) = %lu", strlen(output_dir));
    }
+
    if (argc>=4) {
       fps = atoi(argv[4]);
    }
@@ -92,12 +93,12 @@ int main (int argc, char *argv[]) {
 
    if (width<MINWIDTH || width>MAXWIDTH || height<MINHEIGHT || height>MAXHEIGHT) {
       printf("width must be beetween %d and %d, height between %d %d\n", MINWIDTH, MAXWIDTH, MINHEIGHT, MAXHEIGHT);
-      return(ERROR);
+      return(EXIT_FAILURE);
    }
 
    if (fps<MINFPS || fps>MAXFPS) {
       printf("frames per second must be between %d and %d\n", MINFPS, MAXFPS );
-      return(ERROR);
+      return(EXIT_FAILURE);
    }
 
    memset(&info, 0, sizeof(info));
@@ -106,12 +107,12 @@ int main (int argc, char *argv[]) {
    audio_file = sf_open(audio_path, SFM_READ, &info);
    if (audio_file == NULL) {
        printf("failed to open file '%s' : \n%s\n", audio_path, sf_strerror (NULL));
-       return(ERROR);
+       return(EXIT_FAILURE);
    }
 
-   if (info.channels<1) {
+   if (info.channels < 1) {
       puts("no audio channels.");
-      return(ERROR);
+      return(EXIT_FAILURE);
    }
 
    // allocate buffer
@@ -126,20 +127,18 @@ int main (int argc, char *argv[]) {
          pixel_buffer_size
       );
       printf("samplerate: %d, channels: %d\n", info.samplerate, info.channels);
-      return(ERROR);
+      return(EXIT_FAILURE);
    }
 
-   //printf("row_pointers: %lu \npixelbuffer: %lu pixelrow: %lu pixel: %lu\n", sizeof(row_pointers) / sizeof(row_pointers[0]), sizeof(pixelbuffer), sizeof(pixelbuffer[0]), sizeof(pixelbuffer[0][0]));
-   //output_rows(width, height, row_pointers);
-   
-   //printf("frames: %lu\n", info.frames);
 
    video_frames = ceil(fps * info.frames / (int) info.samplerate);
+
+   //printf("frames: %lu\n", info.frames);
    //printf("video_frames: %u, audioframes: %u, samplerate: %u\n", v_frames, info.frames, (int) info.samplerate);
 
    if (video_frames < 1) {
       puts("not enough samples for a video frame");
-      return(ERROR);
+      return(EXIT_FAILURE);
    }
 
    s_dimension dimension = {
@@ -221,7 +220,7 @@ void frame_loop(size_t frame, char* output_dir, SNDFILE* audio_file, s_dimension
 
     if (!png_ptr) {
         fclose(fp);
-        exit(ERROR);
+        exit(EXIT_FAILURE);
     }
 
     info_ptr = png_create_info_struct(png_ptr);
@@ -229,27 +228,29 @@ void frame_loop(size_t frame, char* output_dir, SNDFILE* audio_file, s_dimension
     if (!info_ptr) {
         png_destroy_write_struct(&png_ptr, NULL);
         fclose(fp);
-        exit(ERROR);
+        exit(EXIT_FAILURE);
     }
 
     if (setjmp(png_jmpbuf(png_ptr))) {
         puts("png error");
         png_destroy_write_struct(&png_ptr, &info_ptr);
         fclose(fp);
-        exit(ERROR);
+        exit(EXIT_FAILURE);
     }
 
     // write png
     png_init_io(png_ptr, fp);
-    png_set_IHDR(png_ptr,
-                 info_ptr,
-                 d.width,
-                 d.height,
-                 d.bit_depth,
-                 PNG_COLOR_TYPE_GRAY,
-                 PNG_INTERLACE_NONE,
-                 PNG_COMPRESSION_TYPE_DEFAULT,
-                 PNG_FILTER_TYPE_DEFAULT);
+    png_set_IHDR(
+        png_ptr,
+        info_ptr,
+        d.width,
+        d.height,
+        d.bit_depth,
+        PNG_COLOR_TYPE_GRAY,
+        PNG_INTERLACE_NONE,
+        PNG_COMPRESSION_TYPE_DEFAULT,
+        PNG_FILTER_TYPE_DEFAULT
+    );
     sig_bit.gray = d.bit_depth;
     png_set_sBIT(png_ptr, info_ptr, &sig_bit);
 
