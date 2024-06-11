@@ -39,16 +39,16 @@
 typedef struct  {
    uint16_t width;
    uint16_t height;
-   uint32_t audio_frames;
+   uint32_t audio_frame_size;
    uint16_t channels;
    uint16_t bit_depth;
-} s_dimension;
+} s_dimensions;
 
 
 char const *audio_path;
 char output_dir[256] = "";
 
-static void frame_loop(size_t frame, SNDFILE* audio_file, s_dimension d);
+static void frame_loop(size_t frame, SNDFILE* audio_file, s_dimensions d);
 static void set_filename(char* file_name, const char* dir, size_t index);
 static int min(int val1, int val2);
 
@@ -61,21 +61,22 @@ int main (int argc, char *argv[]) {
    uint16_t width, height, fps = 25, bit_depth = 8;
    uint32_t audio_buffer_size, pixel_buffer_size;
 
-   size_t audio_frames, video_frames;
+   size_t audio_frame_size, video_frames;
 
    SNDFILE *audio_file;
    SF_INFO info;
 
-   if (argc<5) {
+   if (argc < 5) {
       printf("Usage: %s <audio file> <width> <height> <fps> [<ouput dir>]\n", argv[0]);
       return(EXIT_FAILURE);
    }
 
    audio_path = argv[1];
 
-   if (argc>=6) {
+   if (argc >= 6) {
       if (strlen(argv[5]) > 255) {
           puts("output_dir too long\n");
+          printf("strlen(output_dir) = %lu\n", strlen(output_dir));
           return(EXIT_FAILURE);
       }
       strcpy(output_dir, argv[5]);
@@ -83,10 +84,9 @@ int main (int argc, char *argv[]) {
          printf("output_dir '%s' is not accessible\n", output_dir);
          return(EXIT_FAILURE);
       }
-      printf("strlen(output_dir) = %lu", strlen(output_dir));
    }
 
-   if (argc>=4) {
+   if (argc >= 4) {
       fps = atoi(argv[4]);
    }
 
@@ -118,8 +118,8 @@ int main (int argc, char *argv[]) {
    }
 
    // allocate buffer
-   audio_frames = floor(info.samplerate / fps);
-   audio_buffer_size = info.channels * audio_frames;
+   audio_frame_size = floor(info.samplerate / fps);
+   audio_buffer_size = info.channels * audio_frame_size;
    pixel_buffer_size = width * height * BYTES_PER_PIXEL;
 
    if (audio_buffer_size > pixel_buffer_size) {
@@ -143,16 +143,16 @@ int main (int argc, char *argv[]) {
       return(EXIT_FAILURE);
    }
 
-   s_dimension dimension = {
+   s_dimensions dimensions = {
        width,
        height,
-       audio_frames,
+       audio_frame_size,
        (short)info.channels,
        bit_depth
    };
 
    for (size_t frame=0; frame<video_frames; frame++) {
-      frame_loop(frame, audio_file, dimension);
+      frame_loop(frame, audio_file, dimensions);
    }
 
    sf_close(audio_file);
@@ -163,7 +163,7 @@ int main (int argc, char *argv[]) {
 /*
  * write audio block to png file
 */
-void frame_loop(size_t frame, SNDFILE* audio_file, s_dimension d) {
+void frame_loop(size_t frame, SNDFILE* audio_file, s_dimensions d) {
 
     size_t x, y;
     size_t area = d.width * d.height;
@@ -195,7 +195,7 @@ void frame_loop(size_t frame, SNDFILE* audio_file, s_dimension d) {
         row_pointers[i] = &(pixelbuffer[i][0]);
     }
 
-    req = (size_t)sf_seek(audio_file, d.audio_frames * frame, SEEK_SET);
+    req = (size_t)sf_seek(audio_file, d.audio_frame_size * frame, SEEK_SET);
     if (req == -1) {
         puts("[!] audiofile seek error");
         // skip frame
@@ -204,8 +204,10 @@ void frame_loop(size_t frame, SNDFILE* audio_file, s_dimension d) {
     cnt = sf_readf_short(audio_file, audiobuffer, copy_frames);
 
     // more pixel than audioframes? => scroll
-    if (area * BYTES_PER_PIXEL > d.audio_frames) {
-        puts("pixelbuffer scroll not implemented");
+    if (area * BYTES_PER_PIXEL > d.audio_frame_size * d.channels) {
+        printf("area %lu, audio_frame_size %u\n", area, d.audio_frame_size);
+        puts("pixelbuffer scroll not implemented\n");
+        exit(1);
     }
 
     // copy block from audiobuffer to pixelbuffer
