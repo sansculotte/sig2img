@@ -1,6 +1,6 @@
 CC=clang
-CFLAGS=-Wall
-LIBS=-lpng -lsndfile -lm
+CFLAGS=-Wall $(shell pkg-config --cflags libpng sndfile)
+LIBS=$(shell pkg-config --libs libpng sndfile)
 EXECUTEABLE=sig2img
 
 sig2img: sig2img.c
